@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>斐夜 ♡ 泥泥 一起听</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#0d0d0d;
+      color:#fff;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      height:100vh;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+    }
+    .bg-glow{
+      position:fixed;
+      width:300px;height:300px;
+      background:radial-gradient(circle,rgba(255,107,157,0.15) 0%,transparent 70%);
+      top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      pointer-events:none;
+    }
+    .avatars{
+      display:flex;
+      align-items:center;
+      gap:20px;
+      margin-bottom:30px;
+      z-index:1;
+    }
+    .avatar{
+      width:64px;height:64px;
+      border-radius:50%;
+      background:#1a1a1a;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:22px;
+      font-weight:bold;
+      position:relative;
+    }
+    .avatar.mine{border:2px solid #ff6b9d;box-shadow:0 0 16px rgba(255,107,157,0.4);}
+    .avatar.partner{border:2px solid #ff6b9d;box-shadow:0 0 16px rgba(255,107,157,0.4);}
+    .avatar-name{
+      position:absolute;
+      bottom:-24px;
+      font-size:12px;
+      color:#aaa;
+      white-space:nowrap;
+    }
+    .wave-line{display:flex;align-items:center;gap:4px;}
+    .wave-dot{
+      width:4px;height:4px;border-radius:50%;
+      background:#ff6b9d;
+      animation:wave 1.2s ease-in-out infinite;
+    }
+    .wave-dot:nth-child(1){animation-delay:0s;}
+    .wave-dot:nth-child(2){animation-delay:0.15s;}
+    .wave-dot:nth-child(3){animation-delay:0.3s;}
+    .wave-dot:nth-child(4){animation-delay:0.45s;}
+    .wave-dot:nth-child(5){animation-delay:0.6s;}
+    @keyframes wave{
+      0%,100%{opacity:0.3;transform:scale(1);}
+      50%{opacity:1;transform:scale(1.8);}
+    }
+    /* 弹幕层 */
+    .danmaku-layer{
+      position:fixed;
+      top:80px;
+      left:0;right:0;
+      height:120px;
+      z-index:10;
+      pointer-events:none;
+      overflow:hidden;
+    }
+    .danmaku-msg{
+      position:absolute;
+      white-space:nowrap;
+      font-size:14px;
+      padding:6px 14px;
+      border-radius:16px;
+      background:rgba(255,107,157,0.25);
+      color:#ffb6d5;
+      animation:danmakuFly 6s linear forwards;
+      pointer-events:none;
+    }
+    .danmaku-msg.from-me{
+      background:rgba(255,107,157,0.45);
+      color:#fff;
+    }
+    .danmaku-msg .dm-author{
+      font-size:11px;
+      opacity:0.7;
+      margin-right:6px;
+    }
+    @keyframes danmakuFly{
+      from{transform:translateX(100vw);}
+      to{transform:translateX(-100%);}
+    }
+    /* 唱片 */
+    .disc-wrap{
+      width:220px;height:220px;
+      position:relative;
+      z-index:1;
+      margin-bottom:20px;
+    }
+    .disc{
+      width:100%;height:100%;
+      border-radius:50%;
+      background:#1a1a1a;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      box-shadow:0 0 40px rgba(255,107,157,0.2);
+    }
+    .disc img{
+      width:65%;height:65%;
+      border-radius:50%;
+      object-fit:cover;
+    }
+    .disc.spinning{animation:spin 8s linear infinite;}
+    .disc.paused{animation-play-state:paused;}
+    @keyframes spin{
+      from{transform:rotate(0deg);}
+      to{transform:rotate(360deg);}
+    }
+    .disc-center{
+      position:absolute;
+      width:20px;height:20px;
+      border-radius:50%;
+      background:#0d0d0d;
+      border:3px solid #333;
+      top:50%;left:50%;
+      transform:translate(-50%,-50%);
+    }
+    .song-info{
+      text-align:center;
+      z-index:1;
+      margin-bottom:10px;
+    }
+    .song-name{font-size:18px;font-weight:600;color:#fff;margin-bottom:4px;}
+    .song-artist{font-size:14px;color:#aaa;}
+    .progress-wrap{width:280px;z-index:1;margin-bottom:16px;}
+    .progress-bar{
+      width:100%;height:4px;
+      background:#333;
+      border-radius:2px;
+      position:relative;
+      cursor:pointer;
+    }
+    .progress-fill{
+      height:100%;
+      background:#ff6b9d;
+      border-radius:2px;
+      transition:width 0.3s ease;
+    }
+    .time-row{
+      display:flex;
+      justify-content:space-between;
+      font-size:11px;
+      color:#666;
+      margin-top:6px;
+    }
+    .controls{
+      display:flex;
+      align-items:center;
+      gap:28px;
+      z-index:1;
+    }
+    .ctrl-btn{
+      width:44px;height:44px;
+      border-radius:50%;
+      border:none;
+      background:#1a1a1a;
+      color:#fff;
+      font-size:18px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:all 0.2s;
+    }
+    .ctrl-btn:active{background:#ff6b9d;}
+    .ctrl-btn.play-btn{
+      width:56px;height:56px;
+      background:#ff6b9d;
+      font-size:22px;
+    }
+    .ctrl-btn.play-btn:active{background:#e85d8a;}
+    /* 聊天输入 */
+    .chat-bar{
+      position:fixed;
+      bottom:20px;
+      left:20px;right:20px;
+      display:flex;
+      gap:10px;
+      z-index:20;
+      max-width:360px;
+      margin:0 auto;
+    }
+    .chat-bar input{
+      flex:1;
+      padding:10px 14px;
+      border-radius:20px;
+      border:1px solid #333;
+      background:rgba(26,26,26,0.9);
+      color:#fff;
+      font-size:14px;
+      outline:none;
+    }
+    .chat-bar input::placeholder{color:#555;}
+    .chat-bar .send-btn{
+      width:40px;height:40px;
+      border-radius:50%;
+      border:none;
+      background:#ff6b9d;
+      color:#fff;
+      font-size:16px;
+      cursor:pointer;
+      flex-shrink:0;
+    }
+    .footer-text{
+      margin-top:10px;
+      font-size:12px;
+      color:#444;
+      z-index:1;
+      letter-spacing:1px;
+    }
+    .modal-overlay{
+      position:fixed;
+      top:0;left:0;right:0;bottom:0;
+      background:rgba(0,0,0,0.85);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:100;
+    }
+    .modal{
+      background:#1a1a1a;
+      border-radius:16px;
+      padding:28px 24px;
+      text-align:center;
+      width:300px;
+    }
+    .modal h3{font-size:17px;margin-bottom:12px;color:#fff;}
+    .modal p{font-size:13px;color:#888;margin-bottom:20px;}
+    .modal input{
+      width:100%;
+      padding:12px;
+      border-radius:8px;
+      border:1px solid #333;
+      background:#0d0d0d;
+      color:#fff;
+      font-size:15px;
+      text-align:center;
+      margin-bottom:12px;
+    }
+    .modal .btn{
+      display:block;
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:8px;
+      background:#ff6b9d;
+      color:#fff;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+      margin-bottom:8px;
+    }
+    .modal .btn.ghost{
+      background:transparent;
+      border:1px solid #444;
+      color:#aaa;
+    }
+    .hidden{display:none!important;}
+  </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<!-- 弹幕层 -->
+<div class="danmaku-layer" id="danmaku-layer"></div>
+
+<!-- 登录弹窗 -->
+<div id="login-modal" class="modal-overlay">
+  <div class="modal">
+    <h3>斐夜 ♡ 泥泥</h3>
+    <p>输入你们的房间号，一起听歌</p>
+    <input id="room-input" type="text" placeholder="房间号（6位数字）" maxlength="6">
+    <input id="nickname-input" type="text" placeholder="你的昵称" maxlength="10">
+    <button class="btn" onclick="joinRoom()">进入房间</button>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div id="main-ui" class="hidden" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;">
+
+  <div class="avatars">
+    <div class="avatar mine" id="avatar-mine">我<div class="avatar-name" id="name-mine">我</div></div>
+    <div class="wave-line">
+      <div class="wave-dot"></div><div class="wave-dot"></div><div class="wave-dot"></div><div class="wave-dot"></div><div class="wave-dot"></div>
+    </div>
+    <div class="avatar partner" id="avatar-partner">Ta<div class="avatar-name" id="name-partner">Ta</div></div>
+  </div>
+
+  <div class="disc-wrap">
+    <div class="disc spinning" id="disc">
+      <img id="cover-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='100' cy='100' r='100' fill='%231a1a1a'/%3E%3Ctext x='100' y='108' text-anchor='middle' fill='%23555' font-size='14'%3E暂无歌曲%3C/text%3E%3C/svg%3E" alt="cover">
+    </div>
+    <div class="disc-center"></div>
+  </div>
+
+  <div class="song-info">
+    <div class="song-name" id="song-name">等待播放...</div>
+    <div class="song-artist" id="song-artist">—</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progress-bar" onclick="seek(event)">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="time-row">
+      <span id="time-current">00:00</span><span id="time-total">00:00</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="prevSong()">⏮</button>
+    <button class="ctrl-btn play-btn" id="play-btn" onclick="togglePlay()">▶</button>
+    <button class="ctrl-btn" onclick="nextSong()">⏭</button>
+  </div>
+
+  <div class="footer-text">斐夜 ♡ 泥泥 正在一起听</div>
+
+  <!-- 聊天输入 -->
+  <div class="chat-bar">
+    <input id="chat-input" type="text" placeholder="发条弹幕..." maxlength="40" onkeydown="if(event.key==='Enter')sendDanmaku()">
+    <button class="send-btn" onclick="sendDanmaku()">→</button>
+  </div>
+
+</div>
+
+<script>
+// ========== 配置 ==========
+const API_BASE = 'https://netease-cloud-music-api-one.vercel.app';
+const DEFAULT_SONG_ID = '1905941785';
+
+let roomId = '';
+let nickname = '';
+let partnerName = 'Ta';
+let isPlaying = false;
+let currentSong = null;
+let audio = null;
+let syncTimer = null;
+let lastSyncTime = 0;
+
+function joinRoom(){
+  const rid = document.getElementById('room-input').value.trim();
+  const nn = document.getElementById('nickname-input').value.trim();
+  if(rid.length !== 6 || !/^\d{6}$/.test(rid)){
+    alert('请输入6位数字房间号');
+    return;
+  }
+  roomId = rid;
+  nickname = nn || '我';
+  document.getElementById('name-mine').textContent = nickname;
+  document.getElementById('avatar-mine').innerHTML = nickname.charAt(0).toUpperCase() + '<div class="avatar-name" id="name-mine">'+nickname+'</div>';
+  document.getElementById('login-modal').classList.add('hidden');
+  document.getElementById('main-ui').classList.remove('hidden');
+  loadSong(DEFAULT_SONG_ID);
+  startSync();
+}
+
+async function loadSong(songId){
+  try{
+    const detail = await fetch(API_BASE+'/song/detail?ids='+songId).then(r=>r.json());
+    const urlResp = await fetch(API_BASE+'/song/url/v1?id='+songId+'&level=standard').then(r=>r.json());
+    if(!detail.songs || !detail.songs[0]) return;
+    const song = detail.songs[0];
+    const urlData = urlResp.data && urlResp.data[0];
+    currentSong = {
+      id: song.id,
+      name: song.name,
+      artist: song.ar.map(a=>a.name).join('/'),
+      cover: song.al.picUrl + '?param=300y300',
+      url: urlData ? urlData.url : null,
+      duration: song.dt / 1000
+    };
+    updateUI();
+    playAudio();
+  }catch(e){
+    console.error('加载歌曲失败', e);
+  }
+}
+
+function updateUI(){
+  if(!currentSong) return;
+  document.getElementById('song-name').textContent = currentSong.name;
+  document.getElementById('song-artist').textContent = currentSong.artist;
+  document.getElementById('cover-img').src = currentSong.cover;
+  document.getElementById('time-total').textContent = formatTime(currentSong.duration);
+}
+
+function playAudio(){
+  if(!currentSong || !currentSong.url){ tryAltSource(); return; }
+  if(audio){ audio.pause(); audio.src = ''; }
+  audio = new Audio(currentSong.url);
+  audio.volume = 0.8;
+  audio.addEventListener('timeupdate', onTimeUpdate);
+  audio.addEventListener('ended', onEnded);
+  audio.addEventListener('loadedmetadata', ()=>{
+    document.getElementById('time-total').textContent = formatTime(audio.duration);
+    currentSong.duration = audio.duration;
+  });
+  audio.play().catch(e=>console.log('播放失败:',e));
+  isPlaying = true;
+  updatePlayBtn();
+  document.getElementById('disc').classList.add('spinning');
+  document.getElementById('disc').classList.remove('paused');
+}
+
+async function tryAltSource(){
+  const levels = ['higher','standard','exhigh','lossless'];
+  for(const level of levels){
+    try{
+      const resp = await fetch(API_BASE+'/song/url/v1?id='+currentSong.id+'&level='+level).then(r=>r.json());
+      if(resp.data && resp.data[0] && resp.data[0].url){
+        currentSong.url = resp.data[0].url;
+        playAudio();
+        return;
+      }
+    }catch(e){}
+  }
+  alert('这首歌暂无可用音源，请尝试其他歌曲');
+}
+
+function togglePlay(){
+  if(!audio) return;
+  if(isPlaying){ audio.pause(); document.getElementById('disc').classList.add('paused'); }
+  else{ audio.play(); document.getElementById('disc').classList.remove('paused'); }
+  isPlaying = !isPlaying;
+  updatePlayBtn();
+  broadcastState();
+}
+
+function updatePlayBtn(){
+  document.getElementById('play-btn').textContent = isPlaying ? '⏸' : '▶';
+}
+
+function seek(e){
+  if(!audio || !currentSong) return;
+  const bar = document.getElementById('progress-bar');
+  const rect = bar.getBoundingClientRect();
+  const ratio = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = ratio * (currentSong.duration || audio.duration);
+  broadcastState();
+}
+
+function prevSong(){ alert('歌单功能明天上线~'); }
+function nextSong(){ alert('歌单功能明天上线~'); }
+
+function onTimeUpdate(){
+  if(!audio || !currentSong) return;
+  const duration = currentSong.duration || audio.duration || 0;
+  if(duration === 0) return;
+  const pct = (audio.currentTime / duration) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('time-current').textContent = formatTime(audio.currentTime);
+  const now = Date.now();
+  if(now - lastSyncTime > 2000){
+    lastSyncTime = now;
+    broadcastState();
+  }
+}
+
+function onEnded(){
+  isPlaying = false;
+  updatePlayBtn();
+  document.getElementById('disc').classList.add('paused');
+  broadcastState();
+}
+
+function formatTime(sec){
+  if(!sec || isNaN(sec)) return '00:00';
+  const m = Math.floor(sec/60);
+  const s = Math.floor(sec%60);
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+// ========== 弹幕聊天 ==========
+function sendDanmaku(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+
+  const msg = { type:'danmaku', roomId, nickname, text, timestamp:Date.now() };
+  showDanmaku(msg, true);
+  localStorage.setItem('nightfm_dmk_'+roomId+'_'+Date.now(), JSON.stringify(msg));
+  SYNC_CHANNEL.postMessage(msg);
+}
+
+function showDanmaku(msg, isMe){
+  const layer = document.getElementById('danmaku-layer');
+  const el = document.createElement('div');
+  el.className = 'danmaku-msg' + (isMe ? ' from-me' : '');
+  
+  // 随机分配轨道
+  const topPos = 10 + Math.random() * 80;
+  el.style.top = topPos + 'px';
+  
+  // 随机动画时长,有点参差
+  const duration = 5 + Math.random() * 3;
+  el.style.animationDuration = duration + 's';
+  
+  el.innerHTML = '<span class="dm-author">'+msg.nickname+'</span>'+msg.text;
+  layer.appendChild(el);
+  
+  // 动画结束后移除
+  setTimeout(()=>{ el.remove(); }, duration * 1000 + 500);
+}
+
+// ========== 同步 ==========
+const SYNC_CHANNEL = new BroadcastChannel('nightfm-sync');
+const SYNC_KEY = 'nightfm_room_';
+
+function startSync(){
+  SYNC_CHANNEL.addEventListener('message', handleSyncMsg);
+  window.addEventListener('storage', handleStorageSync);
+  syncTimer = setInterval(checkPartnerState, 2000);
+  announcePresence();
+}
+
+function broadcastState(){
+  if(!roomId) return;
+  const state = {
+    type: 'state',
+    roomId,
+    nickname,
+    songId: currentSong ? currentSong.id : null,
+    isPlaying,
+    currentTime: audio ? audio.currentTime : 0,
+    timestamp: Date.now()
+  };
+  localStorage.setItem(SYNC_KEY + roomId + '_state', JSON.stringify(state));
+  SYNC_CHANNEL.postMessage(state);
+}
+
+function announcePresence(){
+  const msg = { type:'presence', roomId, nickname, timestamp:Date.now() };
+  localStorage.setItem(SYNC_KEY+roomId+'_presence_'+nickname, JSON.stringify(msg));
+  SYNC_CHANNEL.postMessage(msg);
+}
+
+function handleSyncMsg(e){
+  if(e.data.roomId !== roomId) return;
+  if(e.data.type === 'danmaku'){
+    if(e.data.nickname !== nickname) showDanmaku(e.data, false);
+    return;
+  }
+  processSync(e.data);
+}
+
+function handleStorageSync(e){
+  if(!e.key) return;
+  if(e.key.startsWith('nightfm_dmk_'+roomId)){
+    try{
+      const data = JSON.parse(e.newValue);
+      if(data.roomId === roomId && data.nickname !== nickname){
+        showDanmaku(data, false);
+      }
+    }catch(er){}
+    return;
+  }
+  if(!e.key.startsWith(SYNC_KEY+roomId)) return;
+  try{
+    const data = JSON.parse(e.newValue);
+    if(data.roomId === roomId) processSync(data);
+  }catch(er){}
+}
+
+function processSync(data){
+  if(data.nickname === nickname) return;
+  if(data.type === 'presence'){
+    partnerName = data.nickname;
+    document.getElementById('name-partner').textContent = partnerName;
+    document.getElementById('avatar-partner').innerHTML = partnerName.charAt(0).toUpperCase() + '<div class="avatar-name" id="name-partner">'+partnerName+'</div>';
+  }
+  if(data.type === 'state' && data.songId){
+    if(!currentSong || currentSong.id !== data.songId){ loadSong(data.songId); }
+    if(audio && Math.abs(audio.currentTime - data.currentTime) > 1.5){ audio.currentTime = data.currentTime; }
+    if(isPlaying !== data.isPlaying){
+      if(data.isPlaying){ audio && audio.play(); document.getElementById('disc').classList.remove('paused'); }
+      else{ audio && audio.pause(); document.getElementById('disc').classList.add('paused'); }
+      isPlaying = data.isPlaying;
+      updatePlayBtn();
+    }
+  }
+}
+
+function checkPartnerState(){
+  for(let i=0;i<localStorage.length;i++){
+    const key = localStorage.key(i);
+    if(key && key.startsWith(SYNC_KEY+roomId) && key.includes('_presence_')){
+      try{
+        const data = JSON.parse(localStorage.getItem(key));
+        if(data.nickname !== nickname){
+          partnerName = data.nickname;
+          document.getElementById('name-partner').textContent = partnerName;
+          document.getElementById('avatar-partner').innerHTML = partnerName.charAt(0).toUpperCase() + '<div class="avatar-name" id="name-partner">'+partnerName+'</div>';
+        }
+      }catch(e){}
+    }
+  }
+}
+
+document.getElementById('room-input').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') joinRoom();
+});
+</script>
+</body>
+</html>
