@@ -30,7 +30,7 @@
       display:flex;
       align-items:center;
       gap:20px;
-      margin-bottom:30px;
+      margin-bottom:20px;
       z-index:1;
     }
     .avatar{
@@ -104,10 +104,10 @@
     }
     /* 唱片 */
     .disc-wrap{
-      width:220px;height:220px;
+      width:180px;height:180px;
       position:relative;
       z-index:1;
-      margin-bottom:20px;
+      margin-bottom:16px;
     }
     .disc{
       width:100%;height:100%;
@@ -142,11 +142,57 @@
     .song-info{
       text-align:center;
       z-index:1;
-      margin-bottom:10px;
+      margin-bottom:6px;
     }
     .song-name{font-size:18px;font-weight:600;color:#fff;margin-bottom:4px;}
     .song-artist{font-size:14px;color:#aaa;}
-    .progress-wrap{width:280px;z-index:1;margin-bottom:16px;}
+
+    /* 歌词显示 */
+    .lyric-display{
+      width:320px;
+      height:80px;
+      overflow:hidden;
+      z-index:1;
+      margin-bottom:10px;
+      position:relative;
+      text-align:center;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+    }
+    .lyric-line{
+      font-size:15px;
+      color:#666;
+      transition:all 0.3s ease;
+      line-height:1.6;
+      padding:2px 0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+    .lyric-line.current{
+      color:#ff6b9d;
+      font-size:16px;
+      font-weight:600;
+      text-shadow:0 0 12px rgba(255,107,157,0.4);
+    }
+    .lyric-line.prev{
+      color:#888;
+      font-size:13px;
+    }
+    .lyric-line.next{
+      color:#888;
+      font-size:13px;
+    }
+    .lyric-line.empty{
+      color:#444;
+      font-size:13px;
+      font-style:italic;
+    }
+
+    .progress-wrap{width:280px;z-index:1;margin-bottom:14px;}
     .progress-bar{
       width:100%;height:4px;
       background:#333;
@@ -193,6 +239,79 @@
       font-size:22px;
     }
     .ctrl-btn.play-btn:active{background:#e85d8a;}
+    /* 复制状态按钮 */
+    .copy-status-btn{
+      position:fixed;
+      top:16px;
+      right:16px;
+      z-index:30;
+      padding:8px 14px;
+      border-radius:20px;
+      border:1px solid #333;
+      background:rgba(26,26,26,0.9);
+      color:#aaa;
+      font-size:12px;
+      cursor:pointer;
+      transition:all 0.2s;
+      backdrop-filter:blur(8px);
+    }
+    .copy-status-btn:hover{border-color:#ff6b9d;color:#ff6b9d;}
+    .copy-status-btn.copied{border-color:#4caf50;color:#4caf50;}
+    /* AI 状态浮窗 */
+    .ai-status-panel{
+      position:fixed;
+      top:16px;
+      left:16px;
+      z-index:30;
+      background:rgba(26,26,26,0.95);
+      border:1px solid #333;
+      border-radius:12px;
+      padding:12px 16px;
+      max-width:260px;
+      font-size:12px;
+      color:#888;
+      backdrop-filter:blur(8px);
+      display:none;
+    }
+    .ai-status-panel.visible{display:block;}
+    .ai-status-panel .panel-title{
+      color:#ff6b9d;
+      font-size:13px;
+      font-weight:600;
+      margin-bottom:8px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .ai-status-panel .panel-title .dot{
+      width:6px;height:6px;
+      border-radius:50%;
+      background:#4caf50;
+      animation:pulse 2s infinite;
+    }
+    @keyframes pulse{
+      0%,100%{opacity:1;}
+      50%{opacity:0.3;}
+    }
+    .ai-status-panel .status-row{
+      margin-bottom:4px;
+      color:#aaa;
+    }
+    .ai-status-panel .status-row span{
+      color:#fff;
+    }
+    .ai-status-panel .status-url{
+      margin-top:8px;
+      padding:6px 8px;
+      background:#0d0d0d;
+      border-radius:6px;
+      font-size:10px;
+      color:#666;
+      word-break:break-all;
+      cursor:pointer;
+      transition:color 0.2s;
+    }
+    .ai-status-panel .status-url:hover{color:#ff6b9d;}
     /* 聊天输入 */
     .chat-bar{
       position:fixed;
@@ -226,7 +345,7 @@
       flex-shrink:0;
     }
     .footer-text{
-      margin-top:10px;
+      margin-top:8px;
       font-size:12px;
       color:#444;
       z-index:1;
@@ -289,6 +408,19 @@
 <!-- 弹幕层 -->
 <div class="danmaku-layer" id="danmaku-layer"></div>
 
+<!-- AI 状态浮窗 -->
+<div class="ai-status-panel" id="ai-panel">
+  <div class="panel-title"><div class="dot"></div>AI 同步状态</div>
+  <div class="status-row">歌曲：<span id="panel-song">—</span></div>
+  <div class="status-row">歌手：<span id="panel-artist">—</span></div>
+  <div class="status-row">当前歌词：<span id="panel-lyric">—</span></div>
+  <div class="status-row">进度：<span id="panel-progress">00:00 / 00:00</span></div>
+  <div class="status-url" id="panel-url" onclick="copyStatusUrl()" title="点击复制状态URL">加载中...</div>
+</div>
+
+<!-- 复制状态按钮 -->
+<button class="copy-status-btn" id="copy-btn" onclick="copyCurrentStatus()">📋 复制当前状态</button>
+
 <!-- 登录弹窗 -->
 <div id="login-modal" class="modal-overlay">
   <div class="modal">
@@ -323,6 +455,13 @@
     <div class="song-artist" id="song-artist">—</div>
   </div>
 
+  <!-- 歌词显示 -->
+  <div class="lyric-display" id="lyric-display">
+    <div class="lyric-line empty" id="lyric-prev">&nbsp;</div>
+    <div class="lyric-line current" id="lyric-current">♪ 歌词加载中...</div>
+    <div class="lyric-line empty" id="lyric-next">&nbsp;</div>
+  </div>
+
   <div class="progress-wrap">
     <div class="progress-bar" id="progress-bar" onclick="seek(event)">
       <div class="progress-fill" id="progress-fill" style="width:0%"></div>
@@ -348,11 +487,62 @@
 
 </div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <script>
 // ========== 配置 ==========
 const API_BASE = 'https://zm.wwoyun.cn';
 const DEFAULT_SONG_ID = '1905941785';
 
+// ========== Firebase 配置 ==========
+// 请在 Firebase Console (https://console.firebase.google.com/) 创建项目后替换以下配置
+// 1. 创建 Firebase 项目
+// 2. 添加 Web 应用
+// 3. 创建 Realtime Database (选择测试模式)
+// 4. 复制配置到下方
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+let firebaseReady = false;
+let dbRef = null;
+
+function initFirebase(){
+  try{
+    if(FIREBASE_CONFIG.apiKey === "YOUR_API_KEY"){
+      console.log('Firebase 未配置，使用本地模式');
+      return;
+    }
+    firebase.initializeApp(FIREBASE_CONFIG);
+    dbRef = firebase.database();
+    firebaseReady = true;
+    console.log('Firebase 已连接');
+  }catch(e){
+    console.log('Firebase 初始化失败，使用本地模式', e);
+  }
+}
+
+function writeStateToFirebase(state){
+  if(!firebaseReady || !dbRef || !roomId) return;
+  dbRef.ref('rooms/' + roomId + '/state').set(state);
+}
+
+function readStateFromFirebase(callback){
+  if(!firebaseReady || !dbRef || !roomId) return;
+  dbRef.ref('rooms/' + roomId + '/state').once('value', snap => {
+    if(snap.val()) callback(snap.val());
+  });
+}
+
+// ========== 状态变量 ==========
 let roomId = '';
 let nickname = '';
 let partnerName = 'Ta';
@@ -361,7 +551,100 @@ let currentSong = null;
 let audio = null;
 let syncTimer = null;
 let lastSyncTime = 0;
+let lyrics = [];       // [{time: seconds, text: "歌词"}]
+let currentLyricIdx = -1;
 
+// ========== LRC 歌词解析 ==========
+function parseLRC(lrcText){
+  const result = [];
+  if(!lrcText) return result;
+  const lines = lrcText.split('\n');
+  const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/g;
+  for(const line of lines){
+    const times = [];
+    let match;
+    while((match = timeRegex.exec(line)) !== null){
+      const min = parseInt(match[1]);
+      const sec = parseInt(match[2]);
+      const ms = parseInt(match[3]);
+      times.push(min * 60 + sec + ms / (match[3].length === 3 ? 1000 : 100));
+    }
+    const text = line.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '').trim();
+    if(text && times.length > 0){
+      for(const t of times){
+        result.push({ time: t, text: text });
+      }
+    }
+  }
+  result.sort((a, b) => a.time - b.time);
+  return result;
+}
+
+function getCurrentLyric(currentTime){
+  if(!lyrics.length) return { idx: -1, text: '', prev: '', next: '' };
+  let idx = -1;
+  for(let i = lyrics.length - 1; i >= 0; i--){
+    if(currentTime >= lyrics[i].time - 0.3){
+      idx = i;
+      break;
+    }
+  }
+  return {
+    idx,
+    text: idx >= 0 ? lyrics[idx].text : '',
+    prev: idx > 0 ? lyrics[idx - 1].text : '',
+    next: idx < lyrics.length - 1 ? lyrics[idx + 1].text : ''
+  };
+}
+
+function updateLyricDisplay(currentTime){
+  const info = getCurrentLyric(currentTime);
+  if(info.idx !== currentLyricIdx){
+    currentLyricIdx = info.idx;
+    const prevEl = document.getElementById('lyric-prev');
+    const curEl = document.getElementById('lyric-current');
+    const nextEl = document.getElementById('lyric-next');
+
+    prevEl.className = 'lyric-line ' + (info.prev ? 'prev' : 'empty');
+    prevEl.textContent = info.prev || '\u00a0';
+
+    curEl.className = 'lyric-line ' + (info.text ? 'current' : 'empty');
+    curEl.textContent = info.text || '♪ ~';
+
+    nextEl.className = 'lyric-line ' + (info.next ? 'next' : 'empty');
+    nextEl.textContent = info.next || '\u00a0';
+  }
+}
+
+async function loadLyrics(songId){
+  lyrics = [];
+  currentLyricIdx = -1;
+  document.getElementById('lyric-current').textContent = '♪ 歌词加载中...';
+  document.getElementById('lyric-current').className = 'lyric-line empty';
+  document.getElementById('lyric-prev').textContent = '\u00a0';
+  document.getElementById('lyric-next').textContent = '\u00a0';
+
+  try{
+    const resp = await fetch(API_BASE + '/lyric?id=' + songId).then(r => r.json());
+    const lrcText = resp.lrc && resp.lrc.lyric ? resp.lrc.lyric : '';
+    if(lrcText){
+      lyrics = parseLRC(lrcText);
+      if(lyrics.length > 0){
+        document.getElementById('lyric-current').textContent = '♪ 准备就绪';
+        document.getElementById('lyric-current').className = 'lyric-line empty';
+      } else {
+        document.getElementById('lyric-current').textContent = '♪ 暂无歌词';
+      }
+    } else {
+      document.getElementById('lyric-current').textContent = '♪ 暂无歌词';
+    }
+  }catch(e){
+    console.log('歌词加载失败', e);
+    document.getElementById('lyric-current').textContent = '♪ 歌词不可用';
+  }
+}
+
+// ========== 核心逻辑 ==========
 function joinRoom(){
   const rid = document.getElementById('room-input').value.trim();
   const nn = document.getElementById('nickname-input').value.trim();
@@ -375,8 +658,10 @@ function joinRoom(){
   document.getElementById('avatar-mine').innerHTML = nickname.charAt(0).toUpperCase() + '<div class="avatar-name" id="name-mine">'+nickname+'</div>';
   document.getElementById('login-modal').classList.add('hidden');
   document.getElementById('main-ui').classList.remove('hidden');
+  document.getElementById('ai-panel').classList.add('visible');
   loadSong(DEFAULT_SONG_ID);
   startSync();
+  initFirebase();
 }
 
 async function loadSong(songId){
@@ -396,6 +681,7 @@ async function loadSong(songId){
     };
     updateUI();
     playAudio();
+    loadLyrics(songId);
   }catch(e){
     console.error('加载歌曲失败', e);
   }
@@ -474,6 +760,13 @@ function onTimeUpdate(){
   const pct = (audio.currentTime / duration) * 100;
   document.getElementById('progress-fill').style.width = pct + '%';
   document.getElementById('time-current').textContent = formatTime(audio.currentTime);
+
+  // 更新歌词
+  updateLyricDisplay(audio.currentTime);
+
+  // 更新 AI 状态面板
+  updateAIPanel(audio.currentTime);
+
   const now = Date.now();
   if(now - lastSyncTime > 2000){
     lastSyncTime = now;
@@ -495,6 +788,56 @@ function formatTime(sec){
   return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
 
+// ========== AI 状态面板 ==========
+function updateAIPanel(currentTime){
+  if(!currentSong) return;
+  document.getElementById('panel-song').textContent = currentSong.name;
+  document.getElementById('panel-artist').textContent = currentSong.artist;
+  const info = getCurrentLyric(currentTime);
+  document.getElementById('panel-lyric').textContent = info.text || '—';
+  document.getElementById('panel-progress').textContent = formatTime(currentTime) + ' / ' + formatTime(currentSong.duration);
+}
+
+// ========== 复制状态 ==========
+function copyCurrentStatus(){
+  if(!currentSong) return;
+  const info = audio ? getCurrentLyric(audio.currentTime) : { text: '' };
+  const time = audio ? formatTime(audio.currentTime) : '00:00';
+  const total = currentSong ? formatTime(currentSong.duration) : '00:00';
+  const status = `🎵 正在听：${currentSong.name} - ${currentSong.artist}\n📍 进度：${time} / ${total}\n🎤 当前歌词：${info.text || '（纯音乐）'}\n🔗 房间号：${roomId}`;
+
+  navigator.clipboard.writeText(status).then(()=>{
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✅ 已复制！';
+    btn.classList.add('copied');
+    setTimeout(()=>{
+      btn.textContent = '📋 复制当前状态';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(()=>{
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = status;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✅ 已复制！';
+    btn.classList.add('copied');
+    setTimeout(()=>{
+      btn.textContent = '📋 复制当前状态';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function copyStatusUrl(){
+  if(!roomId) return;
+  const url = window.location.origin + window.location.pathname + '?room=' + roomId;
+  navigator.clipboard.writeText(url).catch(()=>{});
+}
+
 // ========== 弹幕聊天 ==========
 function sendDanmaku(){
   const input = document.getElementById('chat-input');
@@ -512,19 +855,12 @@ function showDanmaku(msg, isMe){
   const layer = document.getElementById('danmaku-layer');
   const el = document.createElement('div');
   el.className = 'danmaku-msg' + (isMe ? ' from-me' : '');
-  
-  // 随机分配轨道
   const topPos = 10 + Math.random() * 80;
   el.style.top = topPos + 'px';
-  
-  // 随机动画时长,有点参差
   const duration = 5 + Math.random() * 3;
   el.style.animationDuration = duration + 's';
-  
   el.innerHTML = '<span class="dm-author">'+msg.nickname+'</span>'+msg.text;
   layer.appendChild(el);
-  
-  // 动画结束后移除
   setTimeout(()=>{ el.remove(); }, duration * 1000 + 500);
 }
 
@@ -537,21 +873,46 @@ function startSync(){
   window.addEventListener('storage', handleStorageSync);
   syncTimer = setInterval(checkPartnerState, 2000);
   announcePresence();
+
+  // Firebase 监听
+  if(firebaseReady && dbRef && roomId){
+    dbRef.ref('rooms/' + roomId + '/state').on('value', snap => {
+      if(snap.val()){
+        const data = snap.val();
+        if(data.nickname !== nickname){
+          processSync(data);
+        }
+      }
+    });
+  }
+
+  // 更新状态 URL
+  if(roomId){
+    const url = window.location.origin + window.location.pathname + '?room=' + roomId;
+    document.getElementById('panel-url').textContent = url;
+  }
 }
 
 function broadcastState(){
   if(!roomId) return;
+  const info = audio ? getCurrentLyric(audio.currentTime) : { text: '' };
   const state = {
     type: 'state',
     roomId,
     nickname,
     songId: currentSong ? currentSong.id : null,
+    songName: currentSong ? currentSong.name : '',
+    artist: currentSong ? currentSong.artist : '',
     isPlaying,
     currentTime: audio ? audio.currentTime : 0,
+    currentLyric: info.text || '',
     timestamp: Date.now()
   };
   localStorage.setItem(SYNC_KEY + roomId + '_state', JSON.stringify(state));
   SYNC_CHANNEL.postMessage(state);
+
+  // 写入 Firebase
+  writeStateToFirebase(state);
 }
 
 function announcePresence(){
@@ -622,9 +983,21 @@ function checkPartnerState(){
   }
 }
 
+// ========== URL 参数自动加入房间 ==========
+function checkUrlParams(){
+  const params = new URLSearchParams(window.location.search);
+  const room = params.get('room');
+  if(room && /^\d{6}$/.test(room)){
+    document.getElementById('room-input').value = room;
+  }
+}
+
 document.getElementById('room-input').addEventListener('keydown', function(e){
   if(e.key === 'Enter') joinRoom();
 });
+
+// 初始化
+checkUrlParams();
 </script>
 </body>
 </html>
